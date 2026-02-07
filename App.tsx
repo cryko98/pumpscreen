@@ -8,7 +8,7 @@ import { TrendingBar } from './components/TrendingBar';
 import { Token } from './types';
 import { fetchTrendingTokens } from './services/dexScreenerService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCcw, Zap, TrendingUp, BarChart, Settings, Globe, Moon, Sun, X } from 'lucide-react';
+import { RefreshCcw, Zap, Settings, Globe, Moon, Sun, X } from 'lucide-react';
 import { translations, Language } from './translations';
 
 const App: React.FC = () => {
@@ -18,7 +18,6 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadStatus, setLoadStatus] = useState('Initializing...');
-  const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'trending' | 'volume' | 'gainers' | 'age'>('trending');
   
   const [watchlist, setWatchlist] = useState<string[]>(() => {
@@ -47,25 +46,22 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('pumpscreener_theme', theme);
     if (theme === 'light') {
-      document.documentElement.classList.add('light-mode');
+      document.body.classList.add('light-mode-active');
     } else {
-      document.documentElement.classList.remove('light-mode');
+      document.body.classList.remove('light-mode-active');
     }
   }, [theme]);
 
   const loadData = async () => {
     setLoading(true);
-    setLoadStatus('Connecting to Nodes...');
+    setLoadStatus('Connecting...');
     try {
       const data = await fetchTrendingTokens();
       if (data && data.length > 0) {
         setTokens(data);
-        setError(null);
-      } else {
-        setLoadStatus('No pairs found...');
       }
     } catch (e) {
-      setError("Sync Failed.");
+      console.error("Sync Error", e);
     } finally {
       setLoading(false);
     }
@@ -85,19 +81,12 @@ const App: React.FC = () => {
 
   const processedTokens = useMemo(() => {
     let base = showWatchlist ? tokens.filter(tok => watchlist.includes(tok.id)) : tokens;
-    
     let filtered = base.filter(t => 
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      t.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.address.toLowerCase().includes(searchQuery.toLowerCase())
+      t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
     if (sortBy === 'volume') return [...filtered].sort((a, b) => b.volume24h - a.volume24h);
     if (sortBy === 'gainers') return [...filtered].sort((a, b) => b.priceChange24h - a.priceChange24h);
-    if (sortBy === 'age') {
-      const getMin = (s: string) => parseInt(s) * (s.includes('h') ? 60 : (s.includes('d') ? 1440 : 1));
-      return [...filtered].sort((a, b) => getMin(a.age) - getMin(b.age));
-    }
     return [...filtered].sort((a, b) => b.score - a.score);
   }, [tokens, searchQuery, sortBy, watchlist, showWatchlist]);
 
@@ -253,11 +242,6 @@ const App: React.FC = () => {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #22c55e; }
-        
-        .light-mode { background-color: #ffffff !important; color: #111827 !important; }
-        .light-mode .bg-[#0c0c0c], .light-mode .bg-[#080808], .light-mode .bg-[#111] { background-color: #ffffff !important; }
-        .light-mode .border-white\/5, .light-mode .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
-        .light-mode .text-white { color: #111827 !important; }
       `}</style>
     </div>
   );

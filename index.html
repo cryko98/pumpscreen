@@ -7,19 +7,23 @@
     <title>PumpScreener - Realtime Memecoin Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Shim process.env for browser compatibility to prevent white screen crashes
+      window.process = { env: { API_KEY: "" } };
+    </script>
     <style>
         :root {
             --bg-dark: #0c0c0c;
-            --bg-light: #f9fafb;
+            --bg-light: #ffffff;
         }
         body {
             font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--bg-dark);
+            background-color: #0c0c0c; /* Hardcoded default to prevent white flash */
             color: #ffffff;
             margin: 0;
             overflow: hidden;
+            min-height: 100vh;
         }
-        /* Prevent white screen flash */
         #root {
             min-height: 100vh;
             background-color: inherit;
@@ -42,9 +46,10 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .light-mode .glass {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+        /* Specific override for light mode background */
+        .light-mode-active {
+            background-color: #ffffff !important;
+            color: #111827 !important;
         }
     </style>
 <script type="importmap">

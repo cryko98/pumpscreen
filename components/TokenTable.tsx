@@ -30,12 +30,13 @@ const PercentCell = ({ value }: { value: number }) => {
 
 export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, selectedTokenId, watchlist, onToggleWatchlist, theme }) => {
   const currentTextClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
+  const subTextClass = theme === 'dark' ? 'text-gray-500' : 'text-gray-400';
   
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full text-left border-separate border-spacing-0">
         <thead>
-          <tr className={`${theme === 'dark' ? 'bg-[#111]' : 'bg-gray-100'} text-gray-500 text-[9px] uppercase font-black tracking-widest sticky top-0 z-10 border-b border-white/5`}>
+          <tr className={`${theme === 'dark' ? 'bg-[#111]' : 'bg-gray-100'} text-gray-500 text-[9px] uppercase font-black tracking-widest sticky top-0 z-10 border-b border-black/5`}>
             <th className="px-4 py-3">Token</th>
             <th className="px-2 py-3 text-right">Price</th>
             <th className="px-2 py-3 text-right">Age</th>
@@ -54,7 +55,7 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
               <tr 
                 key={token.id}
                 onClick={() => onSelectToken(token)}
-                className={`group cursor-pointer transition-all hover:bg-green-500/[0.03] border-b border-white/5 ${
+                className={`group cursor-pointer transition-all hover:bg-green-500/[0.03] border-b border-black/5 ${
                   selectedTokenId === token.id ? 'bg-green-500/[0.05]' : ''
                 }`}
               >
@@ -62,7 +63,7 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
                   <div className="flex items-center gap-3">
                     <img 
                       src={token.image} 
-                      className="w-8 h-8 rounded-lg bg-black/20 border border-white/10" 
+                      className="w-8 h-8 rounded-lg bg-black/10 border border-black/10" 
                       onError={(e) => (e.currentTarget.src = `https://ui-avatars.com/api/?name=${token.symbol}&background=222&color=fff`)}
                       alt=""
                     />
@@ -72,14 +73,14 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
                           {token.name}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{token.symbol}</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${subTextClass}`}>{token.symbol}</span>
                     </div>
                   </div>
                 </td>
                 <td className={`px-2 py-3 text-right font-mono text-[11px] font-bold ${currentTextClass}`}>
                   ${token.price < 0.0001 ? token.price.toExponential(2) : token.price.toFixed(6)}
                 </td>
-                <td className="px-2 py-3 text-right text-gray-400 font-mono text-[11px]">
+                <td className="px-2 py-3 text-right text-gray-500 font-mono text-[11px]">
                   {token.age}
                 </td>
                 <td className={`px-2 py-3 text-right font-mono text-[11px] ${currentTextClass}`}>

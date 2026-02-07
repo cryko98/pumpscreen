@@ -2,7 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeToken = async (tokenData: any) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Use process.env.API_KEY exclusively as per guidelines.
+  // The global shim in index.html ensures this doesn't crash the UI if undefined.
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.warn("Gemini API Key missing. Skipping AI analysis.");
+    return { verdict: "UNKNOWN", analysis: "AI features require an API_KEY environment variable.", score: 0 };
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
@@ -29,7 +38,7 @@ export const analyzeToken = async (tokenData: any) => {
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
     return { verdict: "UNKNOWN", analysis: "AI is currently sleeping through the bull run.", score: 50 };
