@@ -37,18 +37,11 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
       }
     }
 
-    // 3. AGGRESSIVE EXPANDED SEARCH: Massive query list for high volume and variety
-    // Expanded keywords to capture more of the current meta
+    // 3. PUMP.FUN EXCLUSIVE SEARCH: Focused queries to capture launchpad meta
     const searchQueries = [
-      'pump', 'solana', 'raydium', 'ai', 'dog', 'pepe', 'wif', 
-      'cat', 'moon', 'trump', 'elon', 'goat', 'bonk', 'popcat',
-      'fart', 'zerebro', 'griff', 'toby', 'skibidi', 'pnut',
-      'ai16z', 'fartcoin', 'act', 'moodeng', 'chillguy', 'luce', 
-      'fwog', 'bert', 'max', 'mumu', 'giga', 'retardio', 'scf', 
-      'habibi', 'aura', 'quant', 'ban', 'eagle', 'bome', 'jup'
+      'pump.fun', 'pump', 'bonding', 'curve'
     ];
     
-    // Fetch multiple search pages concurrently
     const searchPromises = searchQueries.map(async (q) => {
       try {
         const res = await fetch(`${DEX_API}/search?q=${q}`);
@@ -67,12 +60,16 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     if (allPairs.length === 0) return [];
 
-    // Deduplication and Ranking by Liquidity/Volume mix
+    // Deduplication
     const uniquePairsMap = new Map();
     allPairs.forEach(pair => {
       if (!pair.baseToken || !pair.baseToken.address) return;
+      
+      // CRITICAL: PUMP.FUN ONLY FILTER
+      // Tokens launched via pump.fun always have addresses ending in 'pump'
+      if (!pair.baseToken.address.toLowerCase().endsWith('pump')) return;
+
       const current = uniquePairsMap.get(pair.baseToken.address);
-      // Keep the one with higher liquidity if duplicate
       if (!current || (pair.liquidity?.usd || 0) > (current.liquidity?.usd || 0)) {
         uniquePairsMap.set(pair.baseToken.address, pair);
       }
@@ -80,23 +77,15 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     const uniquePairs = Array.from(uniquePairsMap.values());
 
-    // Filtering: Minimum viability checks
-    const filteredPairs = uniquePairs.filter((pair: any) => 
-      !['SOL', 'USDC', 'USDT', 'DAI', 'WSOL'].includes(pair.baseToken.symbol?.toUpperCase()) &&
-      (pair.liquidity?.usd || 0) > 100 // Very low bar to maximize token count for the terminal
-    );
-
-    // Dynamic Ranking: Sort primarily by 24h volume
-    const sortedPairs = filteredPairs.sort((a: any, b: any) => {
+    // Sorting by 24h volume for high activity feel
+    const sortedPairs = uniquePairs.sort((a: any, b: any) => {
       const volA = a.volume?.h24 || 0;
       const volB = b.volume?.h24 || 0;
       return volB - volA;
     });
 
-    // Return an even larger list (aiming for 500-1000)
     return sortedPairs.slice(0, 1000).map((pair: any) => {
       const buys = (pair.txns?.h24?.buys || 0) + (pair.txns?.h6?.buys || 0) + (pair.txns?.h1?.buys || 0);
-      const sells = (pair.txns?.h24?.sells || 0) + (pair.txns?.h6?.sells || 0) + (pair.txns?.h1?.sells || 0);
       const volume = pair.volume?.h24 || 0;
       
       const calculatedScore = Math.min(999, Math.floor((volume / 5000) + (buys / 5)));
@@ -122,7 +111,7 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
         url: pair.url,
         score: calculatedScore,
         creator: pair.baseToken.address.slice(0, 4) + '...' + pair.baseToken.address.slice(-4),
-        description: pair.info?.description || `Live degen pair on Solana.`,
+        description: pair.info?.description || `Pump.fun launched token on Solana.`,
         bondingCurve: Math.min(100, Math.floor((pair.liquidity?.usd / 60000) * 100)),
         holders: Math.floor(buys * 0.8) + 5
       };
