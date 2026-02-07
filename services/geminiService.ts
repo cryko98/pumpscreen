@@ -2,8 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeToken = async (tokenData: any) => {
-  // Always use a named parameter with process.env.API_KEY
-  // New instance is created on each call as per best practices for dynamic keys
+  // Always use a named parameter with process.env.API_KEY as per instructions
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
@@ -31,7 +30,7 @@ export const analyzeToken = async (tokenData: any) => {
       }
     });
 
-    // Directly access .text property as per GenerateContentResponse guidelines
+    // Use .text property directly as defined in GenerateContentResponse
     const text = response.text;
     if (!text) throw new Error("Empty AI response");
     
