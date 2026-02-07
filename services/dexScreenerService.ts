@@ -37,11 +37,15 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
       }
     }
 
-    // 3. AGGRESSIVE EXPANDED SEARCH: Massive query list for high volume
+    // 3. AGGRESSIVE EXPANDED SEARCH: Massive query list for high volume and variety
+    // Expanded keywords to capture more of the current meta
     const searchQueries = [
       'pump', 'solana', 'raydium', 'ai', 'dog', 'pepe', 'wif', 
       'cat', 'moon', 'trump', 'elon', 'goat', 'bonk', 'popcat',
-      'fart', 'zerebro', 'griff', 'toby', 'skibidi', 'pnut'
+      'fart', 'zerebro', 'griff', 'toby', 'skibidi', 'pnut',
+      'ai16z', 'fartcoin', 'act', 'moodeng', 'chillguy', 'luce', 
+      'fwog', 'bert', 'max', 'mumu', 'giga', 'retardio', 'scf', 
+      'habibi', 'aura', 'quant', 'ban', 'eagle', 'bome', 'jup'
     ];
     
     // Fetch multiple search pages concurrently
@@ -68,6 +72,7 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
     allPairs.forEach(pair => {
       if (!pair.baseToken || !pair.baseToken.address) return;
       const current = uniquePairsMap.get(pair.baseToken.address);
+      // Keep the one with higher liquidity if duplicate
       if (!current || (pair.liquidity?.usd || 0) > (current.liquidity?.usd || 0)) {
         uniquePairsMap.set(pair.baseToken.address, pair);
       }
@@ -77,34 +82,34 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     // Filtering: Minimum viability checks
     const filteredPairs = uniquePairs.filter((pair: any) => 
-      !['SOL', 'USDC', 'USDT', 'DAI'].includes(pair.baseToken.symbol) &&
-      (pair.liquidity?.usd || 0) > 200 // Low bar for degen coins
+      !['SOL', 'USDC', 'USDT', 'DAI', 'WSOL'].includes(pair.baseToken.symbol?.toUpperCase()) &&
+      (pair.liquidity?.usd || 0) > 100 // Very low bar to maximize token count for the terminal
     );
 
-    // Dynamic Ranking
+    // Dynamic Ranking: Sort primarily by 24h volume
     const sortedPairs = filteredPairs.sort((a: any, b: any) => {
       const volA = a.volume?.h24 || 0;
       const volB = b.volume?.h24 || 0;
       return volB - volA;
     });
 
-    // Return massive list (up to 300)
-    return sortedPairs.slice(0, 300).map((pair: any) => {
-      const buys = pair.txns?.h24?.buys || 0;
-      const sells = pair.txns?.h24?.sells || 0;
+    // Return an even larger list (aiming for 500-1000)
+    return sortedPairs.slice(0, 1000).map((pair: any) => {
+      const buys = (pair.txns?.h24?.buys || 0) + (pair.txns?.h6?.buys || 0) + (pair.txns?.h1?.buys || 0);
+      const sells = (pair.txns?.h24?.sells || 0) + (pair.txns?.h6?.sells || 0) + (pair.txns?.h1?.sells || 0);
       const volume = pair.volume?.h24 || 0;
       
-      const calculatedScore = Math.min(999, Math.floor((volume / 10000) + (buys / 10)));
+      const calculatedScore = Math.min(999, Math.floor((volume / 5000) + (buys / 5)));
 
       return {
         id: pair.pairAddress,
         address: pair.baseToken.address,
         pairAddress: pair.pairAddress,
-        name: pair.baseToken.name,
-        symbol: pair.baseToken.symbol,
+        name: pair.baseToken.name || 'Unknown',
+        symbol: pair.baseToken.symbol || '???',
         price: parseFloat(pair.priceUsd) || 0,
         age: pair.pairCreatedAt ? calculateAge(pair.pairCreatedAt) : 'NEW',
-        txns24h: buys + sells,
+        txns24h: (pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0),
         volume24h: volume,
         makers24h: Math.floor(buys * 0.7),
         priceChange5m: pair.priceChange?.m5 || 0,
@@ -112,13 +117,13 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
         priceChange6h: pair.priceChange?.h6 || 0,
         priceChange24h: pair.priceChange?.h24 || 0,
         liquidity: pair.liquidity?.usd || 0,
-        marketCap: pair.fdv || 0,
+        marketCap: pair.fdv || pair.marketCap || 0,
         image: pair.info?.imageUrl || `https://dd.dexscreener.com/ds-data/tokens/solana/${pair.baseToken.address}.png`,
         url: pair.url,
         score: calculatedScore,
         creator: pair.baseToken.address.slice(0, 4) + '...' + pair.baseToken.address.slice(-4),
         description: pair.info?.description || `Live degen pair on Solana.`,
-        bondingCurve: Math.min(100, Math.floor((pair.liquidity?.usd / 75000) * 100)),
+        bondingCurve: Math.min(100, Math.floor((pair.liquidity?.usd / 60000) * 100)),
         holders: Math.floor(buys * 0.8) + 5
       };
     });
