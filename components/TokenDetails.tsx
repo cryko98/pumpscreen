@@ -1,10 +1,9 @@
 
 import React, { useState } from 'react';
 import { Token } from '../types';
-import { X, TrendingUp, Shield, BarChart3, Users, ExternalLink, Copy, Check, Zap, ArrowUpRight, Star, BrainCircuit, Loader2 } from 'lucide-react';
+import { X, TrendingUp, Shield, BarChart3, Users, ExternalLink, Copy, Check, Zap, ArrowUpRight, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { translations, Language } from '../translations';
-import { analyzeToken } from '../services/geminiService';
 
 interface TokenDetailsProps {
   token: Token;
@@ -17,8 +16,6 @@ interface TokenDetailsProps {
 
 export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWatched, onToggleWatchlist, language, theme = 'dark' }) => {
   const [copied, setCopied] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<{verdict: string, analysis: string, score: number} | null>(null);
   const t = translations[language];
   const currentTextClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
 
@@ -26,18 +23,6 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
     navigator.clipboard.writeText(token.address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const runAiScan = async () => {
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeToken(token);
-      setAiAnalysis(result);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsAnalyzing(false);
-    }
   };
 
   const goToPumpFun = () => {
@@ -99,55 +84,6 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
               className="w-full h-full border-none"
               title="DexScreener Chart"
             />
-          </div>
-
-          {/* AI Intelligence Section */}
-          <div className={`rounded-3xl p-6 border transition-all ${theme === 'dark' ? 'bg-[#111] border-white/5' : 'bg-gray-50 border-black/5'}`}>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <BrainCircuit className="text-green-500" size={24} />
-                <h3 className={`text-xl font-black italic tracking-tighter uppercase ${currentTextClass}`}>AI Degen Scanner</h3>
-              </div>
-              <button 
-                onClick={runAiScan}
-                disabled={isAnalyzing}
-                className="px-6 py-2 bg-green-500 text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-green-400 transition-all disabled:opacity-50"
-              >
-                {isAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-                {isAnalyzing ? "Scanning..." : "Run Analysis"}
-              </button>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {aiAnalysis ? (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="px-4 py-2 bg-green-500/20 rounded-xl border border-green-500/30">
-                      <span className="text-green-500 font-black text-lg italic tracking-widest">{aiAnalysis.verdict}</span>
-                    </div>
-                    <div className="flex-1 h-2 bg-black/20 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${aiAnalysis.score}%` }}
-                        className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                      />
-                    </div>
-                    <span className="text-xs font-mono font-bold text-green-500">SCORE: {aiAnalysis.score}/100</span>
-                  </div>
-                  <p className="text-sm font-mono leading-relaxed text-gray-400 border-l-2 border-green-500/30 pl-4 py-1">
-                    {aiAnalysis.analysis}
-                  </p>
-                </motion.div>
-              ) : !isAnalyzing && (
-                <div className="text-center py-8 text-gray-500 text-xs font-mono uppercase tracking-widest">
-                  Ready to process token metadata through Gemini Neural Engine...
-                </div>
-              )}
-            </AnimatePresence>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
