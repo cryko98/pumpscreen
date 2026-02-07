@@ -17,7 +17,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadStatus, setLoadStatus] = useState('Initializing...');
+  const [loadStatus, setLoadStatus] = useState('Syncing Nodes...');
   const [sortBy, setSortBy] = useState<'trending' | 'volume' | 'gainers' | 'age'>('trending');
   
   const [watchlist, setWatchlist] = useState<string[]>(() => {
@@ -54,7 +54,7 @@ const App: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    setLoadStatus('Connecting...');
+    setLoadStatus('Fetching Memecoins...');
     try {
       const data = await fetchTrendingTokens();
       if (data && data.length > 0) {
@@ -69,7 +69,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 20000); 
+    const interval = setInterval(loadData, 30000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -87,6 +87,10 @@ const App: React.FC = () => {
     );
     if (sortBy === 'volume') return [...filtered].sort((a, b) => b.volume24h - a.volume24h);
     if (sortBy === 'gainers') return [...filtered].sort((a, b) => b.priceChange24h - a.priceChange24h);
+    if (sortBy === 'age') {
+       const getMin = (s: string) => parseInt(s) * (s.includes('h') ? 60 : (s.includes('d') ? 1440 : 1));
+       return [...filtered].sort((a, b) => getMin(a.age) - getMin(b.age));
+    }
     return [...filtered].sort((a, b) => b.score - a.score);
   }, [tokens, searchQuery, sortBy, watchlist, showWatchlist]);
 
@@ -112,7 +116,7 @@ const App: React.FC = () => {
            <span className="font-black tracking-tighter text-sm uppercase italic">PumpScreener</span>
         </div>
         <div className="flex items-center gap-6">
-           <div className="flex items-center gap-2 bg-white/5 px-3 py-0.5 rounded border border-white/10 text-[10px] font-mono text-gray-400">
+           <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-0.5 rounded border border-white/10 text-[10px] font-mono text-gray-400">
               <span className="text-green-500 font-bold">CA:</span>
               <span className="select-all">AFKoHXqRazzuiyBFH21YMr2J2TExdGUMZ1DuNbsp65iu</span>
            </div>
@@ -154,7 +158,7 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <span className="uppercase flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
-                    Pairs: <span className={currentTextClass}>{processedTokens.length}</span>
+                    Live Pairs: <span className={currentTextClass}>{processedTokens.length}</span>
                   </span>
                   <button onClick={loadData} className="p-1 hover:text-green-500 transition-colors">
                     <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
@@ -162,7 +166,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="flex-1 overflow-y-auto custom-scrollbar bg-inherit">
                 {loading && tokens.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-4 p-12 text-center">
                     <div className="w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin" />

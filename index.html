@@ -8,8 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // Shim process.env for browser compatibility to prevent white screen crashes
-      window.process = { env: { API_KEY: "" } };
+      // Robust process shim for Vercel/Production environments
+      // Ensures the app doesn't crash on 'ReferenceError: process is not defined'
+      if (typeof window !== 'undefined') {
+        window.process = window.process || {};
+        window.process.env = window.process.env || {};
+        // The API_KEY will be injected by the system at build/runtime
+      }
     </script>
     <style>
         :root {
@@ -18,7 +23,7 @@
         }
         body {
             font-family: 'Space Grotesk', sans-serif;
-            background-color: #0c0c0c; /* Hardcoded default to prevent white flash */
+            background-color: #0c0c0c; 
             color: #ffffff;
             margin: 0;
             overflow: hidden;
@@ -29,10 +34,10 @@
             background-color: inherit;
         }
         ::-webkit-scrollbar {
-            width: 4px;
+            width: 5px;
         }
         ::-webkit-scrollbar-track {
-            background: #111;
+            background: rgba(0,0,0,0.1);
         }
         ::-webkit-scrollbar-thumb {
             background: #22c55e;
@@ -46,10 +51,22 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        /* Specific override for light mode background */
         .light-mode-active {
             background-color: #ffffff !important;
             color: #111827 !important;
+        }
+        .light-mode-active .glass {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        /* Marquee Animation */
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: inline-flex;
+          animation: marquee 30s linear infinite;
         }
     </style>
 <script type="importmap">

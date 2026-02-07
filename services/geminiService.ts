@@ -2,13 +2,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeToken = async (tokenData: any) => {
-  // Use process.env.API_KEY exclusively as per guidelines.
-  // The global shim in index.html ensures this doesn't crash the UI if undefined.
+  // Guidelines: Must use process.env.API_KEY directly.
   const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
-    console.warn("Gemini API Key missing. Skipping AI analysis.");
-    return { verdict: "UNKNOWN", analysis: "AI features require an API_KEY environment variable.", score: 0 };
+    console.warn("AI Key not set in environment.");
+    return { verdict: "OFFLINE", analysis: "Connect API_KEY to unlock AI terminal.", score: 0 };
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -16,10 +15,10 @@ export const analyzeToken = async (tokenData: any) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Analyze this memecoin based on its data. Is it a potential 'moon' or a 'rug'? Be witty, short, and use crypto slang.
+      contents: `Analyze this Solana memecoin. Be aggressive, snappy, and use crypto degen slang.
       Token: ${tokenData.name} (${tokenData.symbol})
       Market Cap: $${tokenData.marketCap}
-      Price Change: ${tokenData.priceChange24h}%
+      24h Change: ${tokenData.priceChange24h}%
       Liquidity: $${tokenData.liquidity}
       Bonding Curve: ${tokenData.bondingCurve}%
       Description: ${tokenData.description}`,
@@ -30,8 +29,8 @@ export const analyzeToken = async (tokenData: any) => {
           type: Type.OBJECT,
           properties: {
             verdict: { type: Type.STRING, description: "MOON, RUG, or HOLD" },
-            analysis: { type: Type.STRING, description: "Short snappy analysis" },
-            score: { type: Type.NUMBER, description: "Degen score from 1-100" }
+            analysis: { type: Type.STRING, description: "Snappy degen analysis" },
+            score: { type: Type.NUMBER, description: "Degeneracy score 1-100" }
           },
           required: ["verdict", "analysis", "score"]
         }
@@ -40,7 +39,7 @@ export const analyzeToken = async (tokenData: any) => {
 
     return JSON.parse(response.text || "{}");
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
-    return { verdict: "UNKNOWN", analysis: "AI is currently sleeping through the bull run.", score: 50 };
+    console.error("AI Error:", error);
+    return { verdict: "UNKNOWN", analysis: "AI node out of sync.", score: 50 };
   }
 };
