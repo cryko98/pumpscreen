@@ -4,23 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PumpScreener - Realtime Memecoin Terminal</title>
+    <title>PumpScreener - Ultra High-End Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // Robust process shim for Vercel/Production environments
-      // Ensures the app doesn't crash on 'ReferenceError: process is not defined'
-      if (typeof window !== 'undefined') {
-        window.process = window.process || {};
-        window.process.env = window.process.env || {};
-        // The API_KEY will be injected by the system at build/runtime
-      }
+      /**
+       * CRITICAL SHIM: Prevents 'process is not defined' crashes in production/Vercel.
+       * This must run before any ES modules are loaded.
+       */
+      window.process = {
+        env: {
+          API_KEY: "" // Will be populated by the environment if available
+        }
+      };
+      
+      // Fallback for Vite environments if needed
+      window.global = window;
     </script>
     <style>
-        :root {
-            --bg-dark: #0c0c0c;
-            --bg-light: #ffffff;
-        }
+        :root { --bg-dark: #0c0c0c; --bg-light: #ffffff; }
         body {
             font-family: 'Space Grotesk', sans-serif;
             background-color: #0c0c0c; 
@@ -29,61 +31,43 @@
             overflow: hidden;
             min-height: 100vh;
         }
-        #root {
-            min-height: 100vh;
-            background-color: inherit;
-        }
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.1);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #22c55e;
-            border-radius: 10px;
-        }
-        .pump-gradient {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-        }
+        #root { min-height: 100vh; background-color: inherit; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
         .glass {
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .light-mode-active {
-            background-color: #ffffff !important;
-            color: #111827 !important;
-        }
-        .light-mode-active .glass {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        /* Marquee Animation */
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-          display: inline-flex;
-          animation: marquee 30s linear infinite;
-        }
+        .light-mode-active { background-color: #ffffff !important; color: #111827 !important; }
+        .light-mode-active .glass { background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.05); }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .animate-marquee { display: inline-flex; animation: marquee 40s linear infinite; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+    "@google/genai": "https://esm.sh/@google/genai@1.0.5",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.17",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0",
+    "recharts": "https://esm.sh/recharts@2.13.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "framer-motion": "https://esm.sh/framer-motion@^12.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Minimal fallback in case React takes time to load -->
+        <div style="display: flex; height: 100vh; width: 100vw; align-items: center; justify-content: center; background: #0c0c0c;">
+            <div style="color: #22c55e; font-family: sans-serif; font-weight: 900; letter-spacing: -0.05em; font-style: italic;">PUMPSCREENER LOADING...</div>
+        </div>
+    </div>
 </body>
 </html>

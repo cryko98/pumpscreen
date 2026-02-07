@@ -21,28 +21,30 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     // 2. Fetch market data for boosted tokens
     if (solanaAddresses.length > 0) {
-      // Chunking addresses because API has limits on URI length
       const chunks = [];
       for (let i = 0; i < solanaAddresses.length; i += 30) {
         chunks.push(solanaAddresses.slice(i, i + 30));
       }
       
       for (const chunk of chunks) {
-        const pairsResponse = await fetch(`${DEX_API}/tokens/${chunk.join(',')}`);
-        if (pairsResponse.ok) {
-          const data = await pairsResponse.json();
-          if (data.pairs) allPairs = [...allPairs, ...data.pairs];
-        }
+        try {
+          const pairsResponse = await fetch(`${DEX_API}/tokens/${chunk.join(',')}`);
+          if (pairsResponse.ok) {
+            const data = await pairsResponse.json();
+            if (data.pairs) allPairs = [...allPairs, ...data.pairs];
+          }
+        } catch (e) { /* silent chunk fail */ }
       }
     }
 
-    // 3. AGGRESSIVE SEARCH: Fetch from multiple keywords to fill the list to 200+
+    // 3. AGGRESSIVE EXPANDED SEARCH: Massive query list for high volume
     const searchQueries = [
       'pump', 'solana', 'raydium', 'ai', 'dog', 'pepe', 'wif', 
-      'cat', 'moon', 'trump', 'elon', 'goat', 'bonk', 'popcat'
+      'cat', 'moon', 'trump', 'elon', 'goat', 'bonk', 'popcat',
+      'fart', 'zerebro', 'griff', 'toby', 'skibidi', 'pnut'
     ];
     
-    // Execute multiple searches in parallel-ish sequences to gather more data
+    // Fetch multiple search pages concurrently
     const searchPromises = searchQueries.map(async (q) => {
       try {
         const res = await fetch(`${DEX_API}/search?q=${q}`);
@@ -61,12 +63,11 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     if (allPairs.length === 0) return [];
 
-    // Deduplication and Ranking
+    // Deduplication and Ranking by Liquidity/Volume mix
     const uniquePairsMap = new Map();
     allPairs.forEach(pair => {
       if (!pair.baseToken || !pair.baseToken.address) return;
       const current = uniquePairsMap.get(pair.baseToken.address);
-      // Prefer Raydium pairs or highest liquidity
       if (!current || (pair.liquidity?.usd || 0) > (current.liquidity?.usd || 0)) {
         uniquePairsMap.set(pair.baseToken.address, pair);
       }
@@ -74,28 +75,26 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
 
     const uniquePairs = Array.from(uniquePairsMap.values());
 
-    // Filtering: Remove stablecoins and dust liquidity
+    // Filtering: Minimum viability checks
     const filteredPairs = uniquePairs.filter((pair: any) => 
-      !['SOL', 'USDC', 'USDT', 'DAI', 'mSOL', 'jitoSOL', 'WSOL'].includes(pair.baseToken.symbol) &&
-      (pair.liquidity?.usd || 0) > 500
+      !['SOL', 'USDC', 'USDT', 'DAI'].includes(pair.baseToken.symbol) &&
+      (pair.liquidity?.usd || 0) > 200 // Low bar for degen coins
     );
 
-    // Dynamic Ranking: Volume (24h) + Momentum (1h)
+    // Dynamic Ranking
     const sortedPairs = filteredPairs.sort((a: any, b: any) => {
       const volA = a.volume?.h24 || 0;
       const volB = b.volume?.h24 || 0;
-      const momentumA = Math.abs(a.priceChange?.h1 || 0);
-      const momentumB = Math.abs(b.priceChange?.h1 || 0);
-      return (volB * (1 + momentumB/100)) - (volA * (1 + momentumA/100));
+      return volB - volA;
     });
 
-    // Return more tokens (up to 250 for a massive list)
-    return sortedPairs.slice(0, 250).map((pair: any) => {
+    // Return massive list (up to 300)
+    return sortedPairs.slice(0, 300).map((pair: any) => {
       const buys = pair.txns?.h24?.buys || 0;
       const sells = pair.txns?.h24?.sells || 0;
       const volume = pair.volume?.h24 || 0;
       
-      const calculatedScore = Math.min(999, Math.floor((volume / 20000) + (buys / 20) + Math.abs(pair.priceChange?.m5 || 0) * 10));
+      const calculatedScore = Math.min(999, Math.floor((volume / 10000) + (buys / 10)));
 
       return {
         id: pair.pairAddress,
@@ -107,7 +106,7 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
         age: pair.pairCreatedAt ? calculateAge(pair.pairCreatedAt) : 'NEW',
         txns24h: buys + sells,
         volume24h: volume,
-        makers24h: Math.floor(buys * 0.65) + 1,
+        makers24h: Math.floor(buys * 0.7),
         priceChange5m: pair.priceChange?.m5 || 0,
         priceChange1h: pair.priceChange?.h1 || 0,
         priceChange6h: pair.priceChange?.h6 || 0,
@@ -118,13 +117,13 @@ export const fetchTrendingTokens = async (): Promise<Token[]> => {
         url: pair.url,
         score: calculatedScore,
         creator: pair.baseToken.address.slice(0, 4) + '...' + pair.baseToken.address.slice(-4),
-        description: pair.info?.description || `Live pair on ${pair.dexId.toUpperCase()}`,
-        bondingCurve: Math.min(100, Math.floor((pair.liquidity?.usd / 85000) * 100)),
-        holders: Math.floor(buys * 0.9) + 10
+        description: pair.info?.description || `Live degen pair on Solana.`,
+        bondingCurve: Math.min(100, Math.floor((pair.liquidity?.usd / 75000) * 100)),
+        holders: Math.floor(buys * 0.8) + 5
       };
     });
   } catch (error) {
-    console.error("DexScreener fetch error:", error);
+    console.error("Sync Failure:", error);
     return [];
   }
 };

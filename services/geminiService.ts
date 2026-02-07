@@ -2,12 +2,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeToken = async (tokenData: any) => {
-  // Guidelines: Must use process.env.API_KEY directly.
-  const apiKey = process.env.API_KEY;
+  /**
+   * Safe key retrieval. 
+   * In Vercel, if you set API_KEY, it's usually process.env.API_KEY.
+   * If using Vite, it might be import.meta.env.VITE_API_KEY.
+   */
+  const apiKey = (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
+                 (import.meta as any).env?.VITE_API_KEY || 
+                 "";
   
   if (!apiKey) {
-    console.warn("AI Key not set in environment.");
-    return { verdict: "OFFLINE", analysis: "Connect API_KEY to unlock AI terminal.", score: 0 };
+    console.warn("AI Key not found. Analysis disabled.");
+    return { verdict: "OFFLINE", analysis: "Terminal restricted. Set API_KEY to enable AI.", score: 0 };
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -15,22 +21,21 @@ export const analyzeToken = async (tokenData: any) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Analyze this Solana memecoin. Be aggressive, snappy, and use crypto degen slang.
+      contents: `Perform deep degen analysis on this Solana token. Use slang like 'moon', 'jeet', 'rug', 'pumping'.
       Token: ${tokenData.name} (${tokenData.symbol})
       Market Cap: $${tokenData.marketCap}
-      24h Change: ${tokenData.priceChange24h}%
+      24h Vol: $${tokenData.volume24h}
       Liquidity: $${tokenData.liquidity}
-      Bonding Curve: ${tokenData.bondingCurve}%
-      Description: ${tokenData.description}`,
+      Bonding: ${tokenData.bondingCurve}%`,
       config: {
-        temperature: 0.8,
+        temperature: 0.9,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            verdict: { type: Type.STRING, description: "MOON, RUG, or HOLD" },
-            analysis: { type: Type.STRING, description: "Snappy degen analysis" },
-            score: { type: Type.NUMBER, description: "Degeneracy score 1-100" }
+            verdict: { type: Type.STRING },
+            analysis: { type: Type.STRING },
+            score: { type: Type.NUMBER }
           },
           required: ["verdict", "analysis", "score"]
         }
@@ -39,7 +44,7 @@ export const analyzeToken = async (tokenData: any) => {
 
     return JSON.parse(response.text || "{}");
   } catch (error) {
-    console.error("AI Error:", error);
-    return { verdict: "UNKNOWN", analysis: "AI node out of sync.", score: 50 };
+    console.error("Gemini Analysis Failure:", error);
+    return { verdict: "ERROR", analysis: "AI Node congested.", score: 50 };
   }
 };
