@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Token } from '../types';
-import { Star } from 'lucide-react';
+import { Star, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface TokenTableProps {
   tokens: Token[];
@@ -33,10 +33,10 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
   const subTextClass = theme === 'dark' ? 'text-gray-500' : 'text-gray-400';
   
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto custom-scrollbar">
       <table className="w-full text-left border-separate border-spacing-0">
         <thead>
-          <tr className={`${theme === 'dark' ? 'bg-[#111]' : 'bg-gray-100'} text-gray-500 text-[9px] uppercase font-black tracking-widest sticky top-0 z-10 border-b border-black/5`}>
+          <tr className={`${theme === 'dark' ? 'bg-[#111]' : 'bg-gray-100'} text-gray-500 text-[9px] uppercase font-black tracking-widest sticky top-0 z-10 border-b border-white/5`}>
             <th className="px-4 py-3">Token</th>
             <th className="px-2 py-3 text-right">Price</th>
             <th className="px-2 py-3 text-right">Age</th>
@@ -45,17 +45,19 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
             <th className="px-2 py-3 text-right">24H</th>
             <th className="px-2 py-3 text-right">Liquidity</th>
             <th className="px-4 py-3 text-right">MCAP</th>
+            <th className="px-2 py-3 text-center">Audit</th>
             <th className="w-10 px-4 py-3"></th>
           </tr>
         </thead>
         <tbody className="bg-inherit">
           {tokens.map((token) => {
             const isWatched = watchlist.includes(token.id);
+            const isSafe = token.liquidity > 20000; // Mock safety check logic
             return (
               <tr 
                 key={token.id}
                 onClick={() => onSelectToken(token)}
-                className={`group cursor-pointer transition-all hover:bg-green-500/[0.03] border-b border-black/5 ${
+                className={`group cursor-pointer transition-all hover:bg-green-500/[0.03] border-b border-white/5 ${
                   selectedTokenId === token.id ? 'bg-green-500/[0.05]' : ''
                 }`}
               >
@@ -97,6 +99,15 @@ export const TokenTable: React.FC<TokenTableProps> = ({ tokens, onSelectToken, s
                 </td>
                 <td className="px-2 py-3 text-right font-mono text-[11px] font-bold text-green-500">
                   {formatValue(token.marketCap)}
+                </td>
+                <td className="px-2 py-3 text-center">
+                   <div className="flex justify-center">
+                      {isSafe ? (
+                        <ShieldCheck size={16} className="text-green-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      ) : (
+                        <AlertTriangle size={16} className="text-orange-500 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      )}
+                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <button 

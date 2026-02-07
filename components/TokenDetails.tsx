@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Token } from '../types';
-import { X, TrendingUp, Shield, BarChart3, Users, ExternalLink, Copy, Check, Zap, ArrowUpRight, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { X, TrendingUp, Shield, BarChart3, Users, ExternalLink, Copy, Check, Zap, ArrowUpRight, Star, BrainCircuit, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { translations, Language } from '../translations';
+import { analyzeToken } from '../services/geminiService';
 
 interface TokenDetailsProps {
   token: Token;
@@ -16,6 +17,8 @@ interface TokenDetailsProps {
 
 export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWatched, onToggleWatchlist, language, theme = 'dark' }) => {
   const [copied, setCopied] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<{verdict: string, analysis: string, score: number} | null>(null);
   const t = translations[language];
   const currentTextClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
 
@@ -25,15 +28,27 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const runAiScan = async () => {
+    setIsAnalyzing(true);
+    try {
+      const result = await analyzeToken(token);
+      setAiAnalysis(result);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const goToPumpFun = () => {
     const pumpUrl = `https://pump.fun/coin/${token.address}`;
     window.open(pumpUrl, '_blank');
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar bg-inherit">
       {/* Detail Header */}
-      <div className="p-6 border-b border-black/5 flex items-center justify-between bg-inherit sticky top-0 z-20">
+      <div className="p-6 border-b border-black/5 flex items-center justify-between bg-inherit sticky top-0 z-20 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-black/5 border border-black/5 overflow-hidden shadow-2xl relative">
             <img 
@@ -76,15 +91,63 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
       </div>
 
       <div className="flex-1 p-6 grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <div className="xl:col-span-3 space-y-6 flex flex-col h-full min-h-[600px]">
-          <div className="relative flex-1 rounded-3xl overflow-hidden bg-black/40 border border-black/10 shadow-2xl">
-            <div className="absolute inset-0 overflow-hidden">
-              <iframe 
-                src={`https://dexscreener.com/solana/${token.pairAddress}?embed=1&theme=dark&trades=0&info=0`}
-                className="absolute top-0 left-0 w-full h-[calc(100%+38px)] border-none"
-                title="DexScreener Chart"
-              />
+        <div className="xl:col-span-3 space-y-6">
+          {/* Chart Container */}
+          <div className="relative h-[500px] rounded-3xl overflow-hidden bg-black/40 border border-black/10 shadow-2xl">
+            <iframe 
+              src={`https://dexscreener.com/solana/${token.pairAddress}?embed=1&theme=dark&trades=0&info=0`}
+              className="w-full h-full border-none"
+              title="DexScreener Chart"
+            />
+          </div>
+
+          {/* AI Intelligence Section */}
+          <div className={`rounded-3xl p-6 border transition-all ${theme === 'dark' ? 'bg-[#111] border-white/5' : 'bg-gray-50 border-black/5'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="text-green-500" size={24} />
+                <h3 className={`text-xl font-black italic tracking-tighter uppercase ${currentTextClass}`}>AI Degen Scanner</h3>
+              </div>
+              <button 
+                onClick={runAiScan}
+                disabled={isAnalyzing}
+                className="px-6 py-2 bg-green-500 text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-green-400 transition-all disabled:opacity-50"
+              >
+                {isAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                {isAnalyzing ? "Scanning..." : "Run Analysis"}
+              </button>
             </div>
+
+            <AnimatePresence mode="wait">
+              {aiAnalysis ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="px-4 py-2 bg-green-500/20 rounded-xl border border-green-500/30">
+                      <span className="text-green-500 font-black text-lg italic tracking-widest">{aiAnalysis.verdict}</span>
+                    </div>
+                    <div className="flex-1 h-2 bg-black/20 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${aiAnalysis.score}%` }}
+                        className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                      />
+                    </div>
+                    <span className="text-xs font-mono font-bold text-green-500">SCORE: {aiAnalysis.score}/100</span>
+                  </div>
+                  <p className="text-sm font-mono leading-relaxed text-gray-400 border-l-2 border-green-500/30 pl-4 py-1">
+                    {aiAnalysis.analysis}
+                  </p>
+                </motion.div>
+              ) : !isAnalyzing && (
+                <div className="text-center py-8 text-gray-500 text-xs font-mono uppercase tracking-widest">
+                  Ready to process token metadata through Gemini Neural Engine...
+                </div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -94,7 +157,7 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
               { label: t.volume, value: `$${(token.volume24h / 1000).toFixed(1)}K`, icon: <TrendingUp size={16} className="text-purple-500"/> },
               { label: t.age, value: token.age, icon: <Users size={16} className="text-orange-500"/> },
             ].map((stat, i) => (
-              <div key={i} className={`glass p-4 rounded-2xl border border-black/5`}>
+              <div key={i} className={`p-4 rounded-2xl border border-white/5 bg-black/10 backdrop-blur-sm`}>
                 <div className="flex items-center gap-2 text-gray-500 mb-1">
                   {stat.icon}
                   <span className="text-[9px] uppercase font-black tracking-widest">{stat.label}</span>
@@ -105,8 +168,9 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
           </div>
         </div>
 
+        {/* Sidebar Actions */}
         <div className="space-y-6">
-          <div className={`glass rounded-3xl p-6 border-green-500/20 shadow-[0_0_50px_rgba(34,197,94,0.05)]`}>
+          <div className={`rounded-3xl p-6 border border-white/5 bg-black/20 backdrop-blur-xl shadow-2xl`}>
             <h3 className={`text-xl font-black mb-6 flex items-center gap-2 italic tracking-tighter uppercase ${currentTextClass}`}>
               <Zap size={20} className="text-green-500 fill-green-500" />
               TERMINAL
@@ -122,17 +186,28 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
               </div>
             </button>
             
-            <div className="mt-8 p-4 bg-black/5 rounded-2xl border border-black/5 space-y-3">
+            <div className="mt-8 p-4 bg-black/20 rounded-2xl border border-white/5 space-y-3">
               <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                 <span>Bonding Curve</span>
                 <span className="text-green-500">{token.bondingCurve || 0}%</span>
               </div>
-              <div className="h-1.5 bg-black/5 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${token.bondingCurve || 0}%` }}
                   className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" 
                 />
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Holders</span>
+                <span className={`text-xs font-mono font-bold ${currentTextClass}`}>{token.holders || 'N/A'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Transactions</span>
+                <span className={`text-xs font-mono font-bold ${currentTextClass}`}>{token.txns24h}</span>
               </div>
             </div>
           </div>

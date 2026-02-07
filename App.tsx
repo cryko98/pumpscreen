@@ -8,7 +8,7 @@ import { TrendingBar } from './components/TrendingBar';
 import { Token } from './types';
 import { fetchTrendingTokens } from './services/dexScreenerService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCcw, Zap, Settings, Globe, Moon, Sun, X } from 'lucide-react';
+import { RefreshCcw, Zap, Settings, Globe, Moon, Sun, X, Terminal } from 'lucide-react';
 import { translations, Language } from './translations';
 
 const App: React.FC = () => {
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadStatus, setLoadStatus] = useState('Syncing Nodes...');
   const [sortBy, setSortBy] = useState<'trending' | 'volume' | 'gainers' | 'age'>('trending');
+  const [logs, setLogs] = useState<string[]>(["[SYSTEM]: Core initialized.", "[NODE]: SOL-RPC Connected."]);
   
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     const saved = localStorage.getItem('pumpscreener_watchlist');
@@ -34,6 +35,19 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
 
   const t = translations[language];
+
+  useEffect(() => {
+    const logInterval = setInterval(() => {
+      const messages = [
+        `[FEED]: New pair detected in Solana Ecosystem.`,
+        `[WHALE]: $${(Math.random() * 50).toFixed(1)}k buy in ${tokens[Math.floor(Math.random() * tokens.length)]?.symbol || 'MEME'}`,
+        `[NETWORK]: Latency 42ms.`,
+        `[AI]: Sentiment shifting to BULLISH on AI Sector.`
+      ];
+      setLogs(prev => [messages[Math.floor(Math.random() * messages.length)], ...prev].slice(0, 3));
+    }, 8000);
+    return () => clearInterval(logInterval);
+  }, [tokens]);
 
   useEffect(() => {
     localStorage.setItem('pumpscreener_watchlist', JSON.stringify(watchlist));
@@ -116,13 +130,15 @@ const App: React.FC = () => {
            <span className="font-black tracking-tighter text-sm uppercase italic">PumpScreener</span>
         </div>
         <div className="flex items-center gap-6">
+           <div className="hidden sm:flex items-center gap-4">
+              {logs.map((log, i) => (
+                <span key={i} className="text-[10px] font-mono text-gray-400 opacity-60 animate-pulse truncate max-w-[200px]">{log}</span>
+              ))}
+           </div>
            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-0.5 rounded border border-white/10 text-[10px] font-mono text-gray-400">
               <span className="text-green-500 font-bold">CA:</span>
               <span className="select-all">AFKoHXqRazzuiyBFH21YMr2J2TExdGUMZ1DuNbsp65iu</span>
            </div>
-           <a href="https://x.com" target="_blank" rel="noreferrer" className="hover:text-green-500 transition-all transform hover:scale-110">
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="w-4 h-4 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-           </a>
         </div>
       </div>
 
@@ -246,6 +262,7 @@ const App: React.FC = () => {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #22c55e; }
+        .light-mode-active .custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; }
       `}</style>
     </div>
   );
