@@ -1,0 +1,5 @@
+{
+  "name": "PumpScreener",
+  "description": "An ultra-modern, high-end real-time memecoin terminal inspired by DexScreener and pump.fun. Featuring live price feeds, bonding curve tracking, and AI-powered market sentiment analysis.",
+  "requestFramePermissions": []
+}
