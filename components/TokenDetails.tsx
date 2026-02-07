@@ -77,13 +77,16 @@ export const TokenDetails: React.FC<TokenDetailsProps> = ({ token, onClose, isWa
 
       <div className="flex-1 p-6 grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-6">
-          {/* Chart Container */}
+          {/* Chart Container - Precision Clipping implemented here */}
           <div className="relative h-[500px] rounded-3xl overflow-hidden bg-black/40 border border-black/10 shadow-2xl">
-            <iframe 
-              src={`https://dexscreener.com/solana/${token.pairAddress}?embed=1&theme=dark&trades=0&info=0`}
-              className="w-full h-full border-none"
-              title="DexScreener Chart"
-            />
+            <div className="absolute inset-0 overflow-hidden" style={{ height: 'calc(100% + 40px)' }}>
+              <iframe 
+                src={`https://dexscreener.com/solana/${token.pairAddress}?embed=1&theme=dark&trades=0&info=0`}
+                className="w-full h-full border-none"
+                style={{ height: '100%', marginBottom: '-40px' }}
+                title="DexScreener Chart"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

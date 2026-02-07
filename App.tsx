@@ -137,7 +137,7 @@ const App: React.FC = () => {
            </div>
            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-0.5 rounded border border-white/10 text-[10px] font-mono text-gray-400">
               <span className="text-green-500 font-bold">CA:</span>
-              <span className="select-all">AFKoHXqRazzuiyBFH21YMr2J2TExdGUMZ1DuNbsp65iu</span>
+              <span className="select-all">xxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
            </div>
         </div>
       </div>
