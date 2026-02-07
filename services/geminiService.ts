@@ -2,21 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const analyzeToken = async (tokenData: any) => {
-  /**
-   * Safe key retrieval. 
-   * In Vercel, if you set API_KEY, it's usually process.env.API_KEY.
-   * If using Vite, it might be import.meta.env.VITE_API_KEY.
-   */
-  const apiKey = (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
-                 (import.meta as any).env?.VITE_API_KEY || 
-                 "";
-  
-  if (!apiKey) {
-    console.warn("AI Key not found. Analysis disabled.");
-    return { verdict: "OFFLINE", analysis: "Terminal restricted. Set API_KEY to enable AI.", score: 0 };
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Always use a named parameter with process.env.API_KEY
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
     const response = await ai.models.generateContent({
@@ -28,14 +15,14 @@ export const analyzeToken = async (tokenData: any) => {
       Liquidity: $${tokenData.liquidity}
       Bonding: ${tokenData.bondingCurve}%`,
       config: {
-        temperature: 0.9,
+        temperature: 1,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            verdict: { type: Type.STRING },
-            analysis: { type: Type.STRING },
-            score: { type: Type.NUMBER }
+            verdict: { type: Type.STRING, description: "A short, catchy verdict like 'MOONSHOT' or 'JEET TRAP'" },
+            analysis: { type: Type.STRING, description: "Deep technical analysis using crypto slang" },
+            score: { type: Type.NUMBER, description: "Degen score from 0 to 100" }
           },
           required: ["verdict", "analysis", "score"]
         }
@@ -45,6 +32,6 @@ export const analyzeToken = async (tokenData: any) => {
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Gemini Analysis Failure:", error);
-    return { verdict: "ERROR", analysis: "AI Node congested.", score: 50 };
+    return { verdict: "ERROR", analysis: "AI Node congested or API key missing.", score: 50 };
   }
 };
